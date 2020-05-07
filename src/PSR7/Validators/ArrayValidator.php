@@ -5,6 +5,7 @@ declare(strict_types=1);
 namespace League\OpenAPIValidation\PSR7\Validators;
 
 use cebe\openapi\spec\Parameter;
+use cebe\openapi\spec\Type;
 use League\OpenAPIValidation\PSR7\Exception\Validation\InvalidParameter;
 use League\OpenAPIValidation\PSR7\Exception\Validation\RequiredParameterMissing;
 use League\OpenAPIValidation\Schema\BreadCrumb;
@@ -53,8 +54,13 @@ class ArrayValidator
 
             $spec = $this->specs[$name];
 
-            if ($spec->explode === false && is_string($argumentValue)) {
+            if ($spec->schema->items && $spec->explode === false && is_string($argumentValue)) {
                 $argumentValue = explode(',', $argumentValue);
+                if ($spec->schema->items && $spec->schema->items->type === Type::INTEGER) {
+                    $argumentValue = array_map(function ($v) {
+                        return is_numeric($v) ? (int) $v : $v;
+                    }, $argumentValue);
+                }
             }
 
             $parameter = SerializedParameter::fromSpec($this->specs[$name]);
