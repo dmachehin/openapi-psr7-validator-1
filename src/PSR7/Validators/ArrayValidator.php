@@ -51,10 +51,20 @@ class ArrayValidator
                 continue;
             }
 
+            $spec = $this->specs[$name];
+
+            if ($spec->explode === false && is_string($argumentValue)) {
+                $argumentValue = explode(',', $argumentValue);
+            }
+
             $parameter = SerializedParameter::fromSpec($this->specs[$name]);
             try {
                 $validator->validate($parameter->deserialize($argumentValue), $parameter->getSchema(), new BreadCrumb($name));
             } catch (SchemaMismatch $e) {
+                $argumentValue = $params[$name];
+                if (is_array($argumentValue)) {
+                    $argumentValue = json_encode($argumentValue, JSON_UNESCAPED_UNICODE | JSON_UNESCAPED_SLASHES);
+                }
                 throw InvalidParameter::becauseValueDidNotMatchSchema($name, $argumentValue, $e);
             }
         }
